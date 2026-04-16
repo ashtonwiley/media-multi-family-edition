@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import logo from "@/assets/logo.png";
-import { Shield, Lock } from "lucide-react";
+import { Shield, Lock, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const SiteNav = () => {
@@ -28,6 +28,11 @@ const SiteNav = () => {
         <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
           <Link to="/" className={linkCls("/")}>Home</Link>
           <Link to="/mission" className={linkCls("/mission")}>Our Mission</Link>
+          {user && (
+            <Link to="/kid" className={linkCls("/kid")}>
+              <span className="inline-flex items-center gap-1"><Sparkles className="w-3 h-3" />Kid</span>
+            </Link>
+          )}
           {user ? (
             <Link to="/parent" className={linkCls("/parent")}>
               <span className="inline-flex items-center gap-1"><Lock className="w-3 h-3" />Parents</span>

@@ -9,6 +9,7 @@ import Mission from "./pages/Mission.tsx";
 import SignUp from "./pages/SignUp.tsx";
 import Auth from "./pages/Auth.tsx";
 import ParentDashboard from "./pages/ParentDashboard.tsx";
+import KidFeed from "./pages/KidFeed.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/signup" element={<SignUp />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/parent" element={<ParentDashboard />} />
+            <Route path="/kid" element={<KidFeed />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
