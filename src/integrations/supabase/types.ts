@@ -14,7 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      family_profiles: {
+        Row: {
+          auto_moderate_content: boolean
+          bedtime_curfew: boolean
+          block_strangers: boolean
+          child_age_group: string
+          child_name: string | null
+          connected_apps: string[]
+          created_at: string
+          daily_screen_time_minutes: number
+          hide_algorithmic_feeds: boolean
+          id: string
+          no_ads: boolean
+          parent_name: string | null
+          require_reply_approval: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_moderate_content?: boolean
+          bedtime_curfew?: boolean
+          block_strangers?: boolean
+          child_age_group?: string
+          child_name?: string | null
+          connected_apps?: string[]
+          created_at?: string
+          daily_screen_time_minutes?: number
+          hide_algorithmic_feeds?: boolean
+          id?: string
+          no_ads?: boolean
+          parent_name?: string | null
+          require_reply_approval?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_moderate_content?: boolean
+          bedtime_curfew?: boolean
+          block_strangers?: boolean
+          child_age_group?: string
+          child_name?: string | null
+          connected_apps?: string[]
+          created_at?: string
+          daily_screen_time_minutes?: number
+          hide_algorithmic_feeds?: boolean
+          id?: string
+          no_ads?: boolean
+          parent_name?: string | null
+          require_reply_approval?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
