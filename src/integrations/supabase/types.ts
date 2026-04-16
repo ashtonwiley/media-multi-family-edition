@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      family_posts: {
+        Row: {
+          author: string
+          content: string
+          created_at: string
+          id: string
+          mood: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          author: string
+          content: string
+          created_at?: string
+          id?: string
+          mood?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          author?: string
+          content?: string
+          created_at?: string
+          id?: string
+          mood?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       family_profiles: {
         Row: {
           auto_moderate_content: boolean
@@ -21,6 +54,7 @@ export type Database = {
           block_strangers: boolean
           child_age_group: string
           child_name: string | null
+          child_pin_hash: string | null
           connected_apps: string[]
           created_at: string
           daily_screen_time_minutes: number
@@ -38,6 +72,7 @@ export type Database = {
           block_strangers?: boolean
           child_age_group?: string
           child_name?: string | null
+          child_pin_hash?: string | null
           connected_apps?: string[]
           created_at?: string
           daily_screen_time_minutes?: number
@@ -55,6 +90,7 @@ export type Database = {
           block_strangers?: boolean
           child_age_group?: string
           child_name?: string | null
+          child_pin_hash?: string | null
           connected_apps?: string[]
           created_at?: string
           daily_screen_time_minutes?: number
@@ -73,7 +109,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_child_pin: { Args: never; Returns: boolean }
+      set_child_pin: { Args: { _pin: string }; Returns: undefined }
+      verify_child_pin: { Args: { _pin: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
