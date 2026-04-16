@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import {
   Shield, Eye, Clock, MessageCircleOff, Sparkles, Lock, LogOut, Save, Moon, MessageSquareWarning, Loader2,
 } from "lucide-react";
+import ChildPinManager from "@/components/ChildPinManager";
+import FamilyFeedManager from "@/components/FamilyFeedManager";
 
 type Profile = {
   parent_name: string | null;
@@ -175,7 +177,11 @@ const ParentDashboard = () => {
             </div>
           </Card>
 
-          {/* Age group */}
+          {/* Family feed: parent posts + child post review */}
+          <FamilyFeedManager userId={user!.id} />
+
+          {/* Child mode PIN */}
+          <ChildPinManager />
           <Card className="bg-card-grad border-border p-6 shadow-soft">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
