@@ -132,9 +132,16 @@ const SafeFeed = () => {
           </DialogHeader>
 
           {replyOpen && (
-            <div className="rounded-xl bg-secondary/40 p-3 text-sm">
-              <span className="text-2xl mr-2">{replyOpen.emoji}</span>
-              <span className="text-muted-foreground">{replyOpen.text}</span>
+            <div className="flex items-center gap-3 rounded-xl bg-secondary/40 p-3 text-sm">
+              <img
+                src={replyOpen.image}
+                alt=""
+                className="w-12 h-12 rounded-lg object-cover shrink-0"
+              />
+              <div>
+                <div className="font-semibold">{replyOpen.who}</div>
+                <span className="text-muted-foreground">{replyOpen.text}</span>
+              </div>
             </div>
           )}
 
