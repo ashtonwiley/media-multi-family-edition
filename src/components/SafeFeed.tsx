@@ -13,20 +13,24 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Heart, MessageCircle, ShieldCheck, Send } from "lucide-react";
+import sunflowerImg from "@/assets/feed-sunflower.jpg";
+import penguinImg from "@/assets/feed-penguin.jpg";
+import pancakeImg from "@/assets/feed-pancake.jpg";
+import soccerImg from "@/assets/feed-soccer.jpg";
 
 type Post = {
   app: string;
   who: string;
   text: string;
   color: string;
-  emoji: string;
+  image: string;
 };
 
 const initialPosts: Post[] = [
-  { app: "Instagram", who: "Grandma Rose", text: "Look what bloomed in the garden today! 🌷", color: "bg-primary/20 text-primary", emoji: "🌻" },
-  { app: "YouTube Kids", who: "Cosmic Kids Yoga", text: "New episode: Adventures with Pip the Penguin", color: "bg-accent/20 text-accent", emoji: "🐧" },
-  { app: "TikTok", who: "Uncle Marco", text: "Pancake flip challenge — slow-mo edition 🥞", color: "bg-safe/20 text-safe", emoji: "🥞" },
-  { app: "Snapchat", who: "Cousin Lily", text: "First day of soccer practice! ⚽", color: "bg-primary/20 text-primary", emoji: "⚽" },
+  { app: "Instagram", who: "Grandma Rose", text: "Look what bloomed in the garden today! 🌷", color: "bg-primary/20 text-primary", image: sunflowerImg },
+  { app: "YouTube Kids", who: "Cosmic Kids Yoga", text: "New episode: Adventures with Pip the Penguin", color: "bg-accent/20 text-accent", image: penguinImg },
+  { app: "TikTok", who: "Uncle Marco", text: "Pancake flip challenge — slow-mo edition 🥞", color: "bg-safe/20 text-safe", image: pancakeImg },
+  { app: "Snapchat", who: "Cousin Lily", text: "First day of soccer practice! ⚽", color: "bg-primary/20 text-primary", image: soccerImg },
 ];
 
 const SafeFeed = () => {
@@ -78,8 +82,15 @@ const SafeFeed = () => {
                 <Badge className={`${p.color} border-0`}>{p.app}</Badge>
                 <ShieldCheck className="w-4 h-4 text-safe" />
               </div>
-              <div className="aspect-square rounded-xl bg-secondary mb-4 flex items-center justify-center text-4xl">
-                {p.emoji}
+              <div className="aspect-square rounded-xl overflow-hidden bg-secondary mb-4">
+                <img
+                  src={p.image}
+                  alt={`${p.app} post by ${p.who}: ${p.text}`}
+                  loading="lazy"
+                  width={768}
+                  height={768}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="font-bold mb-1">{p.who}</div>
               <p className="text-sm text-muted-foreground mb-3">{p.text}</p>
