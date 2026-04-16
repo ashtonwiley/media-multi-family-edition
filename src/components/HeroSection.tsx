@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { Shield, Heart, Lock } from "lucide-react";
 
@@ -23,8 +24,8 @@ const HeroSection = () => {
             into a single, parent-controlled feed. No ads. No strangers. No tracking.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button size="lg" className="bg-brand text-primary-foreground hover:opacity-90 shadow-glow rounded-full text-base font-bold px-8">
-              Set up family account
+            <Button asChild size="lg" className="bg-brand text-primary-foreground hover:opacity-90 shadow-glow rounded-full text-base font-bold px-8">
+              <Link to="/signup">Set up family account</Link>
             </Button>
             <Button
               size="lg"
