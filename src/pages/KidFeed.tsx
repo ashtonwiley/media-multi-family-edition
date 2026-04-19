@@ -27,6 +27,8 @@ const KidFeed = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
+  const isGuest = !user;
+
   const [unlocked, setUnlocked] = useState(false);
   const [pin, setPin] = useState("");
   const [verifying, setVerifying] = useState(false);
@@ -41,11 +43,10 @@ const KidFeed = () => {
   const [loadingPosts, setLoadingPosts] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) navigate("/auth");
-  }, [authLoading, user, navigate]);
-
-  useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setHasPin(false);
+      return;
+    }
     (async () => {
       const [{ data: hp }, { data: prof }] = await Promise.all([
         supabase.rpc("has_child_pin"),
@@ -58,6 +59,10 @@ const KidFeed = () => {
   }, [user]);
 
   const loadPosts = async () => {
+    if (isGuest) {
+      setPosts([]);
+      return;
+    }
     setLoadingPosts(true);
     const { data, error } = await supabase
       .from("family_posts")
@@ -83,6 +88,11 @@ const KidFeed = () => {
     setUnlocked(true);
     toast.success(`Welcome, ${childName || "friend"}! 🌈`);
     loadPosts();
+  };
+
+  const enterDemo = () => {
+    setUnlocked(true);
+    toast.success("Welcome to Kid Mode demo! 🌈");
   };
 
   const lock = () => {
