@@ -37,6 +37,17 @@ const FamilyFeedManager = ({ userId }: { userId: string }) => {
 
   useEffect(() => {
     load();
+    const channel = supabase
+      .channel("family_posts_parent")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "family_posts", filter: `user_id=eq.${userId}` },
+        () => load()
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   const post = async () => {
