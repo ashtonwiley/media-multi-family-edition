@@ -90,6 +90,22 @@ const KidFeed = () => {
     loadPosts();
   };
 
+  // Live updates while the kid feed is unlocked (real user only)
+  useEffect(() => {
+    if (!unlocked || !user) return;
+    const channel = supabase
+      .channel("family_posts_kid")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "family_posts", filter: `user_id=eq.${user.id}` },
+        () => loadPosts()
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [unlocked, user]);
+
   const enterDemo = () => {
     setUnlocked(true);
     toast.success("Welcome to Kid Mode demo! 🌈");
