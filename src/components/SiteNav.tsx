@@ -28,11 +28,9 @@ const SiteNav = () => {
         <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
           <Link to="/" className={linkCls("/")}>Home</Link>
           <Link to="/mission" className={linkCls("/mission")}>Our Mission</Link>
-          {user && (
-            <Link to="/kid" className={linkCls("/kid")}>
-              <span className="inline-flex items-center gap-1"><Sparkles className="w-3 h-3" />Kid</span>
-            </Link>
-          )}
+          <Link to="/kid" className={linkCls("/kid")}>
+            <span className="inline-flex items-center gap-1"><Sparkles className="w-3 h-3" />Kid</span>
+          </Link>
           {user ? (
             <Link to="/parent" className={linkCls("/parent")}>
               <span className="inline-flex items-center gap-1"><Lock className="w-3 h-3" />Parents</span>

@@ -27,6 +27,8 @@ const KidFeed = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
+  const isGuest = !user;
+
   const [unlocked, setUnlocked] = useState(false);
   const [pin, setPin] = useState("");
   const [verifying, setVerifying] = useState(false);
@@ -41,11 +43,10 @@ const KidFeed = () => {
   const [loadingPosts, setLoadingPosts] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) navigate("/auth");
-  }, [authLoading, user, navigate]);
-
-  useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setHasPin(false);
+      return;
+    }
     (async () => {
       const [{ data: hp }, { data: prof }] = await Promise.all([
         supabase.rpc("has_child_pin"),
@@ -58,6 +59,10 @@ const KidFeed = () => {
   }, [user]);
 
   const loadPosts = async () => {
+    if (isGuest) {
+      setPosts([]);
+      return;
+    }
     setLoadingPosts(true);
     const { data, error } = await supabase
       .from("family_posts")
@@ -85,6 +90,11 @@ const KidFeed = () => {
     loadPosts();
   };
 
+  const enterDemo = () => {
+    setUnlocked(true);
+    toast.success("Welcome to Kid Mode demo! 🌈");
+  };
+
   const lock = () => {
     setUnlocked(false);
     setPin("");
@@ -92,10 +102,23 @@ const KidFeed = () => {
   };
 
   const submitPost = async () => {
-    if (!user) return;
     const text = content.trim();
     if (!text) return toast.error("Write something fun!");
     if (text.length > 500) return toast.error("Keep it under 500 characters");
+    if (!user) {
+      const fake: Post = {
+        id: crypto.randomUUID(),
+        author: "child",
+        content: text,
+        mood,
+        status: "pending",
+        created_at: new Date().toISOString(),
+      };
+      setPosts((p) => [fake, ...p]);
+      setContent("");
+      toast.success("Demo post added! Sign in to save it ✨");
+      return;
+    }
     setPosting(true);
     const { error } = await supabase.from("family_posts").insert({
       user_id: user.id,
@@ -135,12 +158,14 @@ const KidFeed = () => {
               </div>
               <h1 className="text-3xl font-bold mb-2">Kid Mode</h1>
               <p className="text-muted-foreground text-sm mb-6">
-                {hasPin === false
+                {isGuest
+                  ? "Try Kid Mode as a guest — no PIN needed! For your own saved family feed, ask a grown-up to set up an account."
+                  : hasPin === false
                   ? "A grown-up needs to set a 4-digit PIN in the Parent Dashboard first."
                   : "Type your secret 4-digit PIN to unlock your feed."}
               </p>
 
-              {hasPin !== false && (
+              {!isGuest && hasPin !== false && (
                 <>
                   <Input
                     inputMode="numeric"
@@ -163,10 +188,21 @@ const KidFeed = () => {
                 </>
               )}
 
-              {hasPin === false && (
+              {!isGuest && hasPin === false && (
                 <Button onClick={() => navigate("/parent")} className="w-full bg-brand text-primary-foreground hover:opacity-90 shadow-glow rounded-full font-bold">
                   Open Parent Dashboard
                 </Button>
+              )}
+
+              {isGuest && (
+                <div className="space-y-2">
+                  <Button onClick={enterDemo} className="w-full bg-brand text-primary-foreground hover:opacity-90 shadow-glow rounded-full font-bold">
+                    <Sparkles className="w-4 h-4 mr-1" /> Enter Kid Mode
+                  </Button>
+                  <Button onClick={() => navigate("/auth")} variant="outline" className="w-full rounded-full">
+                    Parents — sign in
+                  </Button>
+                </div>
               )}
             </Card>
           </section>
