@@ -141,11 +141,11 @@ const KidFeed = () => {
       author: "child",
       content: text,
       mood,
-      status: "pending",
+      status: "approved",
     });
     setPosting(false);
     if (error) return toast.error(error.message);
-    toast.success("Sent to a grown-up to check ✨");
+    toast.success("Posted to your family feed ✨");
     setContent("");
     loadPosts();
   };
