@@ -127,7 +127,7 @@ const KidFeed = () => {
         author: "child",
         content: text,
         mood,
-        status: "pending",
+        status: "approved",
         created_at: new Date().toISOString(),
       };
       setPosts((p) => [fake, ...p]);
