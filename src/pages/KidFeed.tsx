@@ -281,7 +281,7 @@ const KidFeed = () => {
               ))}
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">A grown-up will check it first 💛</span>
+              <span className="text-xs text-muted-foreground">Your post goes straight to the family feed 💛</span>
               <Button
                 onClick={submitPost}
                 disabled={posting || !content.trim()}
