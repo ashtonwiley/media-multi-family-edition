@@ -127,7 +127,7 @@ const KidFeed = () => {
         author: "child",
         content: text,
         mood,
-        status: "pending",
+        status: "approved",
         created_at: new Date().toISOString(),
       };
       setPosts((p) => [fake, ...p]);
@@ -141,11 +141,11 @@ const KidFeed = () => {
       author: "child",
       content: text,
       mood,
-      status: "pending",
+      status: "approved",
     });
     setPosting(false);
     if (error) return toast.error(error.message);
-    toast.success("Sent to a grown-up to check ✨");
+    toast.success("Posted to your family feed ✨");
     setContent("");
     loadPosts();
   };
@@ -281,7 +281,7 @@ const KidFeed = () => {
               ))}
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">A grown-up will check it first 💛</span>
+              <span className="text-xs text-muted-foreground">Your post goes straight to the family feed 💛</span>
               <Button
                 onClick={submitPost}
                 disabled={posting || !content.trim()}
