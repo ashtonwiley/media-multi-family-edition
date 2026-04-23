@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      child_accounts: {
+        Row: {
+          child_name: string
+          created_at: string
+          id: string
+          parent_user_id: string
+          password_hash: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          child_name: string
+          created_at?: string
+          id?: string
+          parent_user_id: string
+          password_hash: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          child_name?: string
+          created_at?: string
+          id?: string
+          parent_user_id?: string
+          password_hash?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       family_posts: {
         Row: {
           author: string
@@ -109,8 +139,57 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _validate_child_password: {
+        Args: { _password: string }
+        Returns: undefined
+      }
+      _validate_child_username: {
+        Args: { _username: string }
+        Returns: undefined
+      }
+      create_child_account: {
+        Args: { _child_name: string; _password: string; _username: string }
+        Returns: string
+      }
       has_child_pin: { Args: never; Returns: boolean }
+      kid_create_post: {
+        Args: {
+          _content: string
+          _mood: string
+          _password: string
+          _username: string
+        }
+        Returns: string
+      }
+      kid_list_posts: {
+        Args: { _password: string; _username: string }
+        Returns: {
+          author: string
+          content: string
+          created_at: string
+          id: string
+          mood: string
+          status: string
+        }[]
+      }
       set_child_pin: { Args: { _pin: string }; Returns: undefined }
+      update_child_account: {
+        Args: {
+          _child_name?: string
+          _id: string
+          _password?: string
+          _username?: string
+        }
+        Returns: undefined
+      }
+      verify_child_login: {
+        Args: { _password: string; _username: string }
+        Returns: {
+          child_name: string
+          parent_user_id: string
+          username: string
+        }[]
+      }
       verify_child_pin: { Args: { _pin: string }; Returns: boolean }
     }
     Enums: {
