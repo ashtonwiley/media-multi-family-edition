@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import SiteNav from "@/components/SiteNav";
 import SiteFooter from "@/components/SiteFooter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { KeyRound, Loader2, Send, Sparkles, ShieldCheck, LogOut, Heart } from "lucide-react";
+import { Loader2, Send, Sparkles, ShieldCheck, LogOut, Heart, User, KeyRound } from "lucide-react";
 
 type Post = {
   id: string;
@@ -21,148 +21,143 @@ type Post = {
   created_at: string;
 };
 
+type KidSession = {
+  username: string;
+  password: string;
+  child_name: string;
+  parent_user_id: string;
+};
+
 const MOODS = ["😊", "🥳", "🌈", "⚽", "🎨", "📚", "🍕", "💖"];
+const STORAGE_KEY = "kid_session_v1";
 
 const KidFeed = () => {
-  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  const isGuest = !user;
-
-  const [unlocked, setUnlocked] = useState(false);
-  const [pin, setPin] = useState("");
+  // login state
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [verifying, setVerifying] = useState(false);
-  const [hasPin, setHasPin] = useState<boolean | null>(null);
-  const [parentName, setParentName] = useState("");
-  const [childName, setChildName] = useState("");
 
+  const [session, setSession] = useState<KidSession | null>(null);
+
+  // feed state
   const [posts, setPosts] = useState<Post[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
   const [content, setContent] = useState("");
   const [mood, setMood] = useState(MOODS[0]);
   const [posting, setPosting] = useState(false);
-  const [loadingPosts, setLoadingPosts] = useState(false);
 
+  // restore session on mount
   useEffect(() => {
-    if (!user) {
-      setHasPin(false);
-      return;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) setSession(JSON.parse(raw));
+    } catch {
+      // ignore
     }
-    (async () => {
-      const [{ data: hp }, { data: prof }] = await Promise.all([
-        supabase.rpc("has_child_pin"),
-        supabase.from("family_profiles").select("parent_name, child_name").eq("user_id", user.id).maybeSingle(),
-      ]);
-      setHasPin(!!hp);
-      setParentName(prof?.parent_name ?? "");
-      setChildName(prof?.child_name ?? "");
-    })();
-  }, [user]);
+  }, []);
 
-  const loadPosts = async () => {
-    if (isGuest) {
-      setPosts([]);
+  const loadPosts = async (s: KidSession) => {
+    setLoadingPosts(true);
+    const { data, error } = await supabase.rpc("kid_list_posts", {
+      _username: s.username,
+      _password: s.password,
+    });
+    if (error) {
+      toast.error(error.message);
+      // session likely invalid → log out
+      localStorage.removeItem(STORAGE_KEY);
+      setSession(null);
+      setLoadingPosts(false);
       return;
     }
-    setLoadingPosts(true);
-    const { data, error } = await supabase
-      .from("family_posts")
-      .select("*")
-      .in("status", ["approved", "pending"])
-      .order("created_at", { ascending: false });
-    if (error) toast.error(error.message);
     setPosts((data ?? []) as Post[]);
     setLoadingPosts(false);
   };
 
-  const unlock = async () => {
-    if (!/^\d{4}$/.test(pin)) return toast.error("Enter your 4-digit PIN");
-    setVerifying(true);
-    const { data, error } = await supabase.rpc("verify_child_pin", { _pin: pin });
-    setVerifying(false);
-    if (error) return toast.error(error.message);
-    if (!data) {
-      toast.error("That PIN didn't work — ask a grown-up!");
-      setPin("");
-      return;
-    }
-    setUnlocked(true);
-    toast.success(`Welcome, ${childName || "friend"}! 🌈`);
-    loadPosts();
-  };
-
-  // Live updates while the kid feed is unlocked (real user only)
+  // load posts whenever we have a session
   useEffect(() => {
-    if (!unlocked || !user) return;
+    if (!session) return;
+    loadPosts(session);
+  }, [session]);
+
+  // realtime — listen to the linked parent's family feed
+  useEffect(() => {
+    if (!session) return;
     const channel = supabase
       .channel("family_posts_kid")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "family_posts", filter: `user_id=eq.${user.id}` },
-        () => loadPosts()
+        {
+          event: "*",
+          schema: "public",
+          table: "family_posts",
+          filter: `user_id=eq.${session.parent_user_id}`,
+        },
+        () => loadPosts(session)
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [unlocked, user]);
+  }, [session]);
 
-  const enterDemo = () => {
-    setUnlocked(true);
-    toast.success("Welcome to Kid Mode demo! 🌈");
+  const login = async () => {
+    if (!username.trim() || !password) return toast.error("Enter your username and password");
+    setVerifying(true);
+    const { data, error } = await supabase.rpc("verify_child_login", {
+      _username: username.trim(),
+      _password: password,
+    });
+    setVerifying(false);
+    if (error) return toast.error(error.message);
+    const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
+    if (!row) {
+      toast.error("That username or password didn't work — ask a grown-up!");
+      setPassword("");
+      return;
+    }
+    const s: KidSession = {
+      username: row.username,
+      password,
+      child_name: row.child_name,
+      parent_user_id: row.parent_user_id,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+    setSession(s);
+    setUsername("");
+    setPassword("");
+    toast.success(`Welcome, ${row.child_name}! 🌈`);
   };
 
-  const lock = () => {
-    setUnlocked(false);
-    setPin("");
+  const logout = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setSession(null);
     setPosts([]);
   };
 
   const submitPost = async () => {
+    if (!session) return;
     const text = content.trim();
     if (!text) return toast.error("Write something fun!");
     if (text.length > 500) return toast.error("Keep it under 500 characters");
-    if (!user) {
-      const fake: Post = {
-        id: crypto.randomUUID(),
-        author: "child",
-        content: text,
-        mood,
-        status: "approved",
-        created_at: new Date().toISOString(),
-      };
-      setPosts((p) => [fake, ...p]);
-      setContent("");
-      toast.success("Demo post added! Sign in to save it ✨");
-      return;
-    }
     setPosting(true);
-    const { error } = await supabase.from("family_posts").insert({
-      user_id: user.id,
-      author: "child",
-      content: text,
-      mood,
-      status: "approved",
+    const { error } = await supabase.rpc("kid_create_post", {
+      _username: session.username,
+      _password: session.password,
+      _content: text,
+      _mood: mood,
     });
     setPosting(false);
     if (error) return toast.error(error.message);
     toast.success("Posted to your family feed ✨");
     setContent("");
-    loadPosts();
+    loadPosts(session);
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen">
-        <SiteNav />
-        <div className="container py-32 text-center text-muted-foreground">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto" />
-        </div>
-      </div>
-    );
-  }
-
-  // PIN gate
-  if (!unlocked) {
+  // Login screen
+  if (!session) {
     return (
       <div className="min-h-screen">
         <SiteNav />
@@ -170,56 +165,67 @@ const KidFeed = () => {
           <section className="container py-20 max-w-md mx-auto">
             <Card className="bg-card-grad border-border p-8 shadow-soft text-center animate-fade-up">
               <div className="w-16 h-16 rounded-full bg-brand mx-auto mb-4 flex items-center justify-center shadow-glow animate-pulse-glow">
-                <KeyRound className="w-8 h-8 text-primary-foreground" />
+                <Sparkles className="w-8 h-8 text-primary-foreground" />
               </div>
               <h1 className="text-3xl font-bold mb-2">Kid Mode</h1>
               <p className="text-muted-foreground text-sm mb-6">
-                {isGuest
-                  ? "Try Kid Mode as a guest — no PIN needed! For your own saved family feed, ask a grown-up to set up an account."
-                  : hasPin === false
-                  ? "A grown-up needs to set a 4-digit PIN in the Parent Dashboard first."
-                  : "Type your secret 4-digit PIN to unlock your feed."}
+                Sign in with the username and password your grown-up gave you.
               </p>
 
-              {!isGuest && hasPin !== false && (
-                <>
-                  <Input
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={4}
-                    placeholder="••••"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                    className="text-3xl tracking-[0.5em] text-center font-bold mb-4"
-                    onKeyDown={(e) => e.key === "Enter" && unlock()}
-                  />
-                  <Button
-                    onClick={unlock}
-                    disabled={verifying || pin.length !== 4}
-                    className="w-full bg-brand text-primary-foreground hover:opacity-90 shadow-glow rounded-full font-bold"
-                  >
-                    {verifying ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-1" />}
-                    Unlock
-                  </Button>
-                </>
-              )}
-
-              {!isGuest && hasPin === false && (
-                <Button onClick={() => navigate("/parent")} className="w-full bg-brand text-primary-foreground hover:opacity-90 shadow-glow rounded-full font-bold">
-                  Open Parent Dashboard
-                </Button>
-              )}
-
-              {isGuest && (
-                <div className="space-y-2">
-                  <Button onClick={enterDemo} className="w-full bg-brand text-primary-foreground hover:opacity-90 shadow-glow rounded-full font-bold">
-                    <Sparkles className="w-4 h-4 mr-1" /> Enter Kid Mode
-                  </Button>
-                  <Button onClick={() => navigate("/auth")} variant="outline" className="w-full rounded-full">
-                    Parents — sign in
-                  </Button>
+              <div className="space-y-3 text-left">
+                <div className="space-y-1">
+                  <Label htmlFor="kid-username">Username</Label>
+                  <div className="relative">
+                    <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="kid-username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.slice(0, 24))}
+                      placeholder="your_username"
+                      className="pl-9"
+                      autoComplete="username"
+                      onKeyDown={(e) => e.key === "Enter" && login()}
+                    />
+                  </div>
                 </div>
-              )}
+                <div className="space-y-1">
+                  <Label htmlFor="kid-password">Password</Label>
+                  <div className="relative">
+                    <KeyRound className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="kid-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value.slice(0, 72))}
+                      placeholder="••••••"
+                      className="pl-9"
+                      autoComplete="current-password"
+                      onKeyDown={(e) => e.key === "Enter" && login()}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                onClick={login}
+                disabled={verifying || !username.trim() || !password}
+                className="w-full bg-brand text-primary-foreground hover:opacity-90 shadow-glow rounded-full font-bold mt-5"
+              >
+                {verifying ? (
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                ) : (
+                  <ShieldCheck className="w-4 h-4 mr-1" />
+                )}
+                Sign in
+              </Button>
+
+              <div className="text-xs text-muted-foreground mt-5">
+                Grown-ups can create kid accounts in the{" "}
+                <button onClick={() => navigate("/auth")} className="underline hover:text-foreground">
+                  Parent area
+                </button>
+                .
+              </div>
             </Card>
           </section>
         </main>
@@ -228,7 +234,7 @@ const KidFeed = () => {
     );
   }
 
-  // Unlocked kid feed
+  // Signed in
   return (
     <div className="min-h-screen">
       <SiteNav />
@@ -239,15 +245,13 @@ const KidFeed = () => {
               <Badge className="bg-accent/20 text-accent border-accent/40 mb-3">
                 <Sparkles className="w-3 h-3 mr-1" /> Kid Mode
               </Badge>
-              <h1 className="text-4xl md:text-5xl font-bold">
-                Hi {childName || "friend"}! 🌈
-              </h1>
+              <h1 className="text-4xl md:text-5xl font-bold">Hi {session.child_name}! 🌈</h1>
               <p className="text-muted-foreground mt-2">
-                Posts from {parentName || "your grown-ups"} and your family. Safe and ad-free.
+                Posts from your family. Safe and ad-free.
               </p>
             </div>
-            <Button onClick={lock} variant="outline" className="rounded-full">
-              <LogOut className="w-4 h-4 mr-1" /> Lock
+            <Button onClick={logout} variant="outline" className="rounded-full">
+              <LogOut className="w-4 h-4 mr-1" /> Sign out
             </Button>
           </div>
         </section>
@@ -281,7 +285,9 @@ const KidFeed = () => {
               ))}
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">Your post goes straight to the family feed 💛</span>
+              <span className="text-xs text-muted-foreground">
+                Your post goes straight to the family feed 💛
+              </span>
               <Button
                 onClick={submitPost}
                 disabled={posting || !content.trim()}
@@ -317,11 +323,13 @@ const KidFeed = () => {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="text-xs text-muted-foreground">
-                          {p.author === "child" ? "👧 You" : `👨‍👩‍👧 ${parentName || "Grown-up"}`} ·{" "}
+                          {p.author === "child" ? "👧 You or a sibling" : "👨‍👩‍👧 Grown-up"} ·{" "}
                           {new Date(p.created_at).toLocaleString()}
                         </div>
                         {isPending ? (
-                          <Badge className="bg-accent/20 text-accent border-0 text-xs">Waiting for approval</Badge>
+                          <Badge className="bg-accent/20 text-accent border-0 text-xs">
+                            Waiting for approval
+                          </Badge>
                         ) : (
                           <Heart className="w-4 h-4 text-primary" />
                         )}
