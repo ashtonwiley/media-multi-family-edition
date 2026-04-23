@@ -82,25 +82,12 @@ const KidFeed = () => {
     loadPosts(session);
   }, [session]);
 
-  // realtime — listen to the linked parent's family feed
+  // poll for new posts every 8s — kids aren't on a Supabase auth session,
+  // so we can't securely subscribe to realtime channels for them
   useEffect(() => {
     if (!session) return;
-    const channel = supabase
-      .channel("family_posts_kid")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "family_posts",
-          filter: `user_id=eq.${session.parent_user_id}`,
-        },
-        () => loadPosts(session)
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    const interval = setInterval(() => loadPosts(session), 8000);
+    return () => clearInterval(interval);
   }, [session]);
 
   const login = async () => {

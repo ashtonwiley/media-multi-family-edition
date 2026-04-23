@@ -172,6 +172,15 @@ export type Database = {
           status: string
         }[]
       }
+      list_child_accounts: {
+        Args: never
+        Returns: {
+          child_name: string
+          created_at: string
+          id: string
+          username: string
+        }[]
+      }
       set_child_pin: { Args: { _pin: string }; Returns: undefined }
       update_child_account: {
         Args: {
