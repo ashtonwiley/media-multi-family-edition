@@ -31,10 +31,7 @@ const ChildAccountManager = () => {
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("child_accounts")
-      .select("id, username, child_name, created_at")
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.rpc("list_child_accounts");
     if (error) toast.error(error.message);
     setAccounts((data ?? []) as ChildAccount[]);
     setLoading(false);
